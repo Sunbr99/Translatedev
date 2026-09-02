@@ -1,0 +1,10 @@
+{
+  "name": "MW Translate v6",
+  "short_name": "MW Translate",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "description": "MW Translate v6 - DELETE BUG BEFORE BUILD",
+  "version": "6.0.0"
+}

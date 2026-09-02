@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b1018">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="MW Translate">
+    <meta name="apple-mobile-web-app-title" content="MW Translate">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>MW Translate</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 15px;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 10px;
+        }
+        h1 { color: #d4af37; font-size: 24px; }
+        
+        /* Mode Switcher Tabs */
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            background: #2d2d2d;
+            color: #888;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #d4af37;
+            color: #1a1a1a;
+            border-color: #d4af37;
+        }
+
+        .box {
+            background: #2d2d2d;
+            border: 1px solid #d4af37;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        label {
+            color: #d4af37;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .counter { font-size: 11px; color: #888; }
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d4af37;
+            background: #1a1a1a;
+            color: #fff;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            outline: none;
+        }
+        textarea { min-height: 120px; resize: vertical; font-family: monospace, sans-serif; }
+        .input-wrapper { position: relative; }
+        .btn-clear {
+            position: absolute; right: 10px; top: 10px;
+            background: transparent; border: none; color: #888;
+            cursor: pointer; font-size: 14px; display: none;
+        }
+        .btn-clear:hover { color: #d4af37; }
+        .langs {
+            display: grid;
+            grid-template-columns: 1fr 35px 1fr;
+            gap: 10px;
+        }
+        button {
+            padding: 12px; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: 0.2s; width: 100%;
+        }
+        .btn-main {
+            background: linear-gradient(135deg, #d4af37, #f4e4a6);
+            color: #1a1a1a; margin-bottom: 15px;
+        }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+        .swap {
+            background: transparent; border: 1px solid #d4af37;
+            color: #d4af37; height: 40px; margin-top: 18px;
+        }
+        .output {
+            background: rgba(212,175,55,0.05);
+            border: 1px solid #d4af37; padding: 12px;
+            min-height: 60px; border-radius: 6px;
+            line-height: 1.6; word-break: break-word;
+            white-space: pre-wrap; font-size: 14px;
+        }
+        .empty { color: #666; font-style: italic; }
+        .btns {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 8px; margin-top: 10px;
+        }
+        .btn-small {
+            background: transparent; border: 1px solid #d4af37;
+            color: #d4af37; padding: 8px; font-size: 12px; border-radius: 4px;
+        }
+        .btn-small:hover { background: rgba(212,175,55,0.1); }
+        .msg {
+            padding: 10px; border-radius: 6px; margin-bottom: 15px;
+            font-size: 12px; border-left: 3px solid #d4af37;
+            background: rgba(212,175,55,0.15); color: #d4af37; display: none;
+        }
+        .msg.show { display: block; }
+        .msg.err { border-left-color: #f44336; background: rgba(244,67,54,0.15); color: #ff7043; }
+        .tag {
+            display: inline-block; padding: 4px 10px; margin: 3px;
+            background: #d4af37; color: #111; border-radius: 12px;
+            font-size: 12px; font-weight: bold;
+        }
+        .analysis-card {
+            background: #222; border-left: 3px solid #d4af37;
+            padding: 10px; margin-top: 10px; font-size: 13px; border-radius: 4px;
+        }
+        .history-list { max-height: 200px; overflow-y: auto; margin-top: 10px; font-size: 12px; }
+        .history-item { border-bottom: 1px solid #444; padding: 8px 0; }
+        .history-item:last-child { border-bottom: none; }
+        .history-item .meta { color: #d4af37; font-size: 10px; margin-bottom: 2px; }
+
+        :root {
+            --bg:#080c12; --panel:#101722; --panel2:#0c121b; --line:#1976d2;
+            --accent:#29d9ff; --accent2:#59ff9b; --text:#e7f1ff; --muted:#71839a;
+        }
+        html { background:var(--bg); }
+        body {
+            background:
+                linear-gradient(rgba(41,217,255,.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(41,217,255,.025) 1px, transparent 1px),
+                var(--bg);
+            background-size:24px 24px;
+            color:var(--text);
+            max-width:760px;
+            padding:12px;
+        }
+        body:before {
+            content:"SYSTEM // MW-TRANSLATE";
+            display:block; color:var(--muted); font:10px monospace;
+            letter-spacing:2px; margin:0 0 8px 2px;
+        }
+        .header { border-bottom:1px solid var(--line); padding-bottom:12px; }
+        h1 { color:var(--accent); font-family:monospace; letter-spacing:1px; text-shadow:0 0 12px rgba(41,217,255,.35); }
+        .header p { color:var(--muted)!important; font-family:monospace; }
+        .mode-tabs { gap:8px; }
+        .tab-btn,.box { background:linear-gradient(145deg,var(--panel),var(--panel2)); border-color:#174a78; }
+        .tab-btn { color:var(--muted); border-radius:3px; }
+        .tab-btn.active { background:#12385c; color:var(--accent); border-color:var(--accent); box-shadow:inset 0 0 18px rgba(41,217,255,.08); }
+        .box { border-radius:3px; box-shadow:0 0 0 1px rgba(41,217,255,.02), 0 8px 30px rgba(0,0,0,.22); }
+        label { color:var(--accent); font-family:monospace; letter-spacing:.5px; }
+        select,textarea { background:#070b11; border-color:#24577f; color:var(--text); border-radius:3px; }
+        textarea:focus,select:focus { border-color:var(--accent); box-shadow:0 0 0 2px rgba(41,217,255,.08); }
+        .btn-main { background:linear-gradient(135deg,#0d4c7c,#116d9c); color:#dff8ff; border:1px solid var(--accent); border-radius:3px; box-shadow:0 0 18px rgba(41,217,255,.12); }
+        .swap,.btn-small { border-color:#23628f; color:var(--accent); border-radius:3px; }
+        .btn-small:hover { background:rgba(41,217,255,.08); }
+        .output,.analysis-card { background:#080d14; border-color:#1e587f; border-radius:3px; }
+        .output { box-shadow:inset 0 0 25px rgba(41,217,255,.025); }
+        .tag { background:#123c4b; color:var(--accent2); border:1px solid #1d6d73; border-radius:2px; }
+        .analysis-card { border-left-color:var(--accent); }
+        .history-item { border-bottom-color:#203040; }
+        .history-item .meta { color:var(--accent); }
+        .brand-mark { color:var(--accent2); }
+        .statusbar {
+            display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;
+            font:10px monospace; color:var(--muted); margin:-6px 0 12px;
+        }
+        .status-online { color:var(--accent2); }
+        @media (max-width:480px) {
+            body { padding:10px; }
+            .langs { grid-template-columns:1fr 40px 1fr; gap:6px; }
+            .btns { grid-template-columns:1fr 1fr 1fr; }
+            textarea { min-height:150px; }
+            h1 { font-size:20px; }
+        }
+
+
+        button,select,textarea { touch-action: manipulation; }
+        button:focus-visible,select:focus-visible,textarea:focus-visible {
+            outline:2px solid var(--accent); outline-offset:2px;
+        }
+        .diag-pass { color:#59ff9b; }
+        .diag-fail { color:#ff7043; }
+        .diag-row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid #1b2a39; font:11px monospace; }
+        .diag-row:last-child { border-bottom:0; }
+
+
+        #live-preview-frame { width:100%; min-height:360px; border:0; display:block; background:#fff; }
+        #preview-alert { margin-bottom:8px; padding:8px; border:1px solid #7f3030; background:rgba(244,67,54,.08); color:#ffb0a0; border-radius:3px; font:11px monospace; }
+        .preview-ok { color:#59ff9b; }
+        .preview-bad { color:#ff7043; }
+        .preview-issue { padding:5px 0; border-bottom:1px solid #243545; }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 aria-label="MW Translate"><span class="brand-mark">MW//</span>TRANSLATE</h1>
+        <p style="font-size: 11px; color: #888;">MW//TRANSLATE • RETRO-FUTURE LANGUAGE & CODE TERMINAL</p>
+    </div>
+    <div class="statusbar">
+        <span class="status-online">● CORE READY</span>
+        <span id="net-status">NET: CHECKING</span>
+        <span>BUILD: MW-D2</span>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="mode-tabs">
+        <button class="tab-btn active" id="tab-text">📝 Text Translate</button>
+        <button class="tab-btn" id="tab-code">💻 Code Inspector</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <!-- Language Selector Box -->
+    <div class="box" id="lang-box">
+        <div class="langs">
+            <div>
+                <label>From</label>
+                <select id="src">
+                    <option value="autodetect">Auto Detect</option>
+                    <option value="en">English</option>
+                    <option value="th">Thai</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="es">Spanish</option>
+                    <option value="vi">Vietnamese</option>
+                    <option value="id">Indonesian</option>
+                </select>
+            </div>
+            <button class="swap" id="swap" title="Swap Languages">⇄</button>
+            <div>
+                <label>To</label>
+                <select id="tgt">
+                    <option value="th">Thai</option>
+                    <option value="en" selected>English</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="es">Spanish</option>
+                    <option value="vi">Vietnamese</option>
+                    <option value="id">Indonesian</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="box-header">
+            <label id="input-label">📝 Text Input</label>
+            <span class="counter" id="counter">0 chars | 0 words</span>
+        </div>
+        <div class="input-wrapper">
+            <textarea aria-label="Text or source code input" id="txt" placeholder="Type or paste text here..."></textarea>
+            <button class="btn-clear" id="clear" title="Clear text">✕</button>
+        </div>
+        <button class="btn-small" id="speak-src" style="width: auto; padding: 4px 8px;">🔊 Listen Source</button>
+    </div>
+
+    <button class="btn-main" id="btn">✨ Translate Text</button>
+
+    <div class="box">
+        <label id="output-label">Result</label>
+        <div class="output empty" id="out" aria-live="polite">Waiting for process...</div>
+        <div id="analysis-container"></div>
+        <div id="vocab" style="margin-top:10px;"></div>
+
+        <div class="btns">
+            <button class="btn-small" id="copy">📋 Copy</button>
+            <button class="btn-small" id="speak-tgt">🔊 Listen Result</button>
+            <button class="btn-small" id="toggle-history">📜 History</button>
+            <button class="btn-small" id="run-diagnostics">🧪 Self-Test</button>
+            <button class="btn-small" id="toggle-preview">🖥️ Live Preview</button>
+        </div>
+    </div>
+
+    <!-- History Container -->
+
+    <div class="box" id="live-preview-box" style="display:none;">
+        <div class="box-header">
+            <label>🖥️ LIVE PREVIEW // REALTIME</label>
+            <span class="counter" id="preview-status">IDLE</span>
+        </div>
+        <div id="preview-alert" style="display:none;"></div>
+        <div id="preview-frame-wrap" style="position:relative;background:#fff;border-radius:3px;overflow:hidden;min-height:260px;">
+            <iframe id="live-preview-frame" title="Live website preview" sandbox="allow-scripts"></iframe>
+            <div id="preview-blocked" style="display:none;position:absolute;inset:0;background:#0b1018;color:#e7f1ff;padding:18px;font:12px monospace;">
+                <div style="color:#ff7043;font-size:14px;font-weight:bold;">⛔ PREVIEW BLOCKED</div>
+                <div id="preview-blocked-message" style="margin-top:8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="box" id="diagnostics-box" style="display:none;">
+        <div class="box-header">
+            <label>🧪 SYSTEM DIAGNOSTICS</label>
+            <span class="counter" id="diag-summary">READY</span>
+        </div>
+        <div id="diagnostics-list" class="history-list"></div>
+    </div>
+
+    <div class="box" id="history-box" style="display: none;">
+        <div class="box-header">
+            <label>📜 History</label>
+            <button class="btn-small" id="clear-history" style="width: auto; padding: 2px 8px; color: #f44336; border-color: #f44336;">Clear</button>
+        </div>
+        <div class="history-list" id="history-list"></div>
+    </div>
+
+    <script>
+        const src = document.getElementById('src');
+        const tgt = document.getElementById('tgt');
+        const txt = document.getElementById('txt');
+        const out = document.getElementById('out');
+        const btn = document.getElementById('btn');
+        const msg = document.getElementById('msg');
+        const counter = document.getElementById('counter');
+        const btnClear = document.getElementById('clear');
+        const historyBox = document.getElementById('history-box');
+        const historyList = document.getElementById('history-list');
+        const analysisContainer = document.getElementById('analysis-container');
+        
+        const tabText = document.getElementById('tab-text');
+        const tabCode = document.getElementById('tab-code');
+        const langBox = document.getElementById('lang-box');
+        const inputLabel = document.getElementById('input-label');
+
+        let currentMode = 'text'; // 'text' or 'code'
+        let debounceTimer;
+        let processToken = 0;
+
+        const voiceMap = {
+            en: 'en-US', th: 'th-TH', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR',
+            fr: 'fr-FR', de: 'de-DE', es: 'es-ES', vi: 'vi-VN', id: 'id-ID'
+        };
+
+        // Switch Mode Tabs
+        tabText.onclick = () => switchMode('text');
+        tabCode.onclick = () => switchMode('code');
+
+        function switchMode(mode) {
+            currentMode = mode;
+            if (mode === 'text') {
+                tabText.classList.add('active');
+                tabCode.classList.remove('active');
+                langBox.style.display = 'block';
+                inputLabel.textContent = '📝 Text Input';
+                txt.placeholder = 'Type or paste text here...';
+                btn.textContent = '✨ Translate Text';
+            } else {
+                tabCode.classList.add('active');
+                tabText.classList.remove('active');
+                langBox.style.display = 'none';
+                inputLabel.textContent = '💻 Source Code Input';
+                txt.placeholder = 'Paste source code here (e.g. JavaScript, Python, C++, PHP, HTML)...';
+                btn.textContent = '🔍 Deep Syntax & Security Scan';
+            }
+            btnClear.click();
+        }
+
+        function show(text, error = false) {
+            msg.textContent = text;
+            msg.className = 'msg show' + (error ? ' err' : '');
+            clearTimeout(show._t);
+            show._t = setTimeout(() => msg.classList.remove('show'), 3000);
+        }
+
+        txt.addEventListener('input', () => {
+            const val = txt.value;
+            counter.textContent = `${val.length} chars | ${val.trim() ? val.trim().split(/\s+/).length : 0} words`;
+            btnClear.style.display = val.length > 0 ? 'block' : 'none';
+
+            if (currentMode === 'text' && val.trim()) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => doProcess(true), 800);
+            }
+        });
+
+        btnClear.onclick = () => {
+            txt.value = '';
+            txt.dispatchEvent(new Event('input'));
+            out.textContent = 'Waiting for process...';
+            out.classList.add('empty');
+            document.getElementById("vocab").innerHTML = '';
+            analysisContainer.innerHTML = '';
+        };
+
+        document.getElementById('swap').onclick = () => {
+            if (src.value === 'autodetect') return;
+            [src.value, tgt.value] = [tgt.value, src.value];
+            if (txt.value.trim()) doProcess();
+        };
+
+        document.getElementById('copy').onclick = async () => {
+            if (out.classList.contains('empty')) return;
+            try {
+                if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+                await navigator.clipboard.writeText(out.textContent);
+                show('✓ Copied to clipboard');
+            } catch (e) {
+                show('❌ Clipboard unavailable', true);
+            }
+        };
+
+        function playSpeech(text, langCode) {
+            if (!text || text === 'Waiting for process...') return;
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = voiceMap[langCode] || 'en-US';
+            speechSynthesis.speak(u);
+        }
+
+        document.getElementById('speak-src').onclick = () => playSpeech(txt.value, src.value === 'autodetect' ? tgt.value : src.value);
+        document.getElementById('speak-tgt').onclick = () => playSpeech(out.textContent, tgt.value);
+
+        // Smart Vocabulary Extraction
+        function showVocabulary(text, lang) {
+            const vocabContainer = document.getElementById("vocab");
+            if (!text || !window.Intl || !Intl.Segmenter) {
+                vocabContainer.innerHTML = '';
+                return;
+            }
+            try {
+                const segmenter = new Intl.Segmenter(lang, { granularity: 'word' });
+                const words = Array.from(segmenter.segment(text))
+                    .filter(s => s.isWordLike)
+                    .map(s => s.segment.trim())
+                    .filter(s => s.length > 1);
+
+                const uniqueWords = [...new Set(words)].slice(0, 6);
+                vocabContainer.innerHTML = uniqueWords.map(w => `<span class="tag">${htmlEscape(w)}</span>`).join("");
+            } catch (e) {
+                vocabContainer.innerHTML = '';
+            }
+        }
+
+        async function doProcess(isAuto = false) {
+            const myToken = ++processToken;
+            const text = txt.value.trim();
+            if (!text) {
+                if (!isAuto) show('⚠️ กรุณาใส่ข้อความหรือซอร์สโค้ด', true);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ กำลังประมวลผล...';
+
+            if (currentMode === 'text') {
+                try {
+                    const sourceLang = src.value === 'autodetect' ? 'auto' : src.value;
+                    const targetLang = tgt.value;
+                    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+                    
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Network error');
+
+                    const data = await res.json();
+                    if (myToken !== processToken) return;
+                    let finalResult = '';
+                    if (data && data[0]) {
+                        data[0].forEach(item => { if (item[0]) finalResult += item[0]; });
+                    }
+
+                    if (!finalResult) throw new Error('ไม่ได้รับผลแปล');
+
+                    out.textContent = finalResult;
+                    out.classList.remove('empty');
+                    analysisContainer.innerHTML = '';
+
+                    showVocabulary(finalResult, tgt.value);
+                    saveHistory(src.value, tgt.value, text, finalResult);
+                    show('✅ แปลเสร็จแล้ว');
+                } catch (e) {
+                    show('❌ ' + e.message, true);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '✨ Translate Text';
+                }
+            } else {
+                setTimeout(() => {
+                    analyzeCode(text);
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Deep Syntax & Security Scan';
+                }, 300);
+            }
+        }
+
+        function analyzeCode(code) {
+            const lines = code.split(/\r?\n/);
+            const errors = [];
+            const warnings = [];
+            const securityWarnings = [];
+            let detectedLang = detectLanguage(code);
+            const language = detectedLang.toLowerCase();
+
+            const pushIssue = (arr, message, index, severity) => {
+                const before = code.slice(0, Math.max(0, index));
+                const line = before.split(/\r?\n/).length;
+                const lastNl = Math.max(before.lastIndexOf('\n'), before.lastIndexOf('\r'));
+                const column = index - lastNl;
+                arr.push({ message, line, column, severity });
+            };
+
+            // Scanner ignores brackets inside strings/comments and validates (), [], {}.
+            const pairs = { ')':'(', ']':'[', '}':'{' };
+            const names = { '(':')', '[':']', '{':'}' };
+            const stack = [];
+            let state = 'code';
+            let quote = '';
+            let escape = false;
+            let tokenStart = 0;
+
+            for (let i = 0; i < code.length; i++) {
+                const ch = code[i], next = code[i + 1];
+
+                if (state === 'lineComment') {
+                    if (ch === '\n' || ch === '\r') state = 'code';
+                    continue;
+                }
+                if (state === 'blockComment') {
+                    if (ch === '*' && next === '/') { state = 'code'; i++; }
+                    continue;
+                }
+                if (state === 'string') {
+                    if (escape) { escape = false; continue; }
+                    if (ch === '\\') { escape = true; continue; }
+                    if (ch === quote) { state = 'code'; quote = ''; }
+                    continue;
+                }
+                if (state === 'template') {
+                    if (escape) { escape = false; continue; }
+                    if (ch === '\\') { escape = true; continue; }
+                    if (ch === '`') { state = 'code'; continue; }
+                    continue;
+                }
+
+                if ((ch === '/' && next === '/') && !['python','php'].some(x => language.includes(x))) {
+                    state = 'lineComment'; i++; continue;
+                }
+                if (ch === '/' && next === '*') { state = 'blockComment'; i++; continue; }
+                if (ch === '"' || ch === "'") { state = 'string'; quote = ch; tokenStart = i; continue; }
+                if (ch === '`' && (language.includes('javascript') || language.includes('typescript'))) {
+                    state = 'template'; tokenStart = i; continue;
+                }
+
+                if (ch === '(' || ch === '[' || ch === '{') {
+                    stack.push({ ch, index:i });
+                } else if (ch === ')' || ch === ']' || ch === '}') {
+                    if (!stack.length) {
+                        pushIssue(errors, `พบ ${ch} แต่ไม่มี ${pairs[ch]} ที่เปิดไว้`, i, 'error');
+                    } else {
+                        const top = stack.pop();
+                        if (top.ch !== pairs[ch]) {
+                            pushIssue(errors, `ปิด ${ch} ไม่ตรงกับ ${top.ch} ที่เปิดไว้`, i, 'error');
+                        }
+                    }
+                }
+            }
+
+            if (state === 'string' || state === 'template') {
+                pushIssue(errors, `พบ string/template literal ที่ยังไม่ปิด (${quote || '`'})`, tokenStart, 'error');
+            }
+            if (state === 'blockComment') {
+                pushIssue(errors, 'พบ block comment /* ... */ ที่ยังไม่ปิด', code.lastIndexOf('/*'), 'error');
+            }
+            while (stack.length) {
+                const item = stack.pop();
+                pushIssue(errors, `พบ ${item.ch} ที่เปิดไว้แต่ยังไม่มี ${names[item.ch]} ปิด`, item.index, 'error');
+            }
+
+            // Language-specific static checks.
+            if (language.includes('javascript') || language.includes('typescript')) {
+                const semicolonLines = lines.map((line, i) => ({line, i}))
+                    .filter(x => /^(?:\s*)(const|let|var|return|throw)\b/.test(x.line))
+                    .filter(x => /^(?:\s*)(const|let|var)\b/.test(x.line) && !/[;,{]?\s*$/.test(x.line.trim()));
+                semicolonLines.slice(0, 10).forEach(x => pushIssue(warnings, 'ตรวจพบ declaration ที่อาจขาด semicolon หรือ expression ต่อบรรทัด', code.indexOf(x.line), 'warning'));
+                if (/\b(?:if|for|while|switch|catch)\s*\([^)]*\)\s*[^{;\n]/.test(code))
+                    warnings.push({message:'control statement อาจไม่มี block { } ทำให้เกิด logic ผิดพลาดได้',line:0,column:0,severity:'warning'});
+                if (/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*;/.test(code))
+                    warnings.push({message:'พบตัวแปรที่มี assignment ว่าง',line:0,column:0,severity:'warning'});
+            }
+
+            if (language.includes('python')) {
+                const indents = [];
+                lines.forEach((line, i) => {
+                    if (!line.trim() || line.trimStart().startsWith('#')) return;
+                    const spaces = line.length - line.trimStart().length;
+                    if (line.includes('\t') && line.includes('    ')) pushIssue(warnings, 'ผสม tab และ spaces ใน indentation', code.indexOf(line), 'warning');
+                    indents.push({spaces,i,line});
+                    if (/:\s*$/.test(line.trim()) === false && /^\s*(if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(line))
+                        pushIssue(errors, 'คำสั่ง block ของ Python อาจขาด colon (:)', code.indexOf(line), 'error');
+                });
+            }
+
+            if (language.includes('html') || language.includes('xml')) {
+                const tags = [];
+                const voidTags = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+                const tagRe = /<\s*(\/?)\s*([A-Za-z][\w:-]*)(?:\s[^<>]*?)?\s*(\/?)>/g;
+                let m;
+                while ((m = tagRe.exec(code))) {
+                    const closing = !!m[1], name = m[2].toLowerCase(), selfClosing = !!m[3] || voidTags.has(name);
+                    if (closing) {
+                        if (!tags.length) pushIssue(errors, `พบ </${name}> แต่ไม่มี tag เปิด`, m.index, 'error');
+                        else {
+                            const top = tags.pop();
+                            if (top.name !== name) pushIssue(errors, `tag ปิด </${name}> ไม่ตรงกับ <${top.name}>`, m.index, 'error');
+                        }
+                    } else if (!selfClosing) tags.push({name,index:m.index});
+                }
+                tags.forEach(t => pushIssue(errors, `tag <${t.name}> เปิดไว้แต่ยังไม่ปิด`, t.index, 'error'));
+            }
+
+            if (language.includes('php')) {
+                const phpOpen = (code.match(/<\?php\b/gi)||[]).length;
+                const phpClose = (code.match(/\?>/g)||[]).length;
+                if (phpOpen && phpClose > phpOpen) pushIssue(errors, 'พบ ?> มากกว่าจำนวน <?php', code.lastIndexOf('?>'), 'error');
+            }
+
+            if (language.includes('java') || language.includes('c / c++')) {
+                if (/\b(?:class|interface|struct)\s+[A-Za-z_]\w*\s+[^{]/.test(code))
+                    warnings.push({message:'ประกาศ type อาจมี syntax ต่อท้ายไม่ครบ',line:0,column:0,severity:'warning'});
+            }
+
+            // Security patterns (static inspection, not proof of vulnerability).
+            const securityRules = [
+                [/eval\s*\(|new\s+Function\s*\(/g, 'พบ dynamic code execution (eval/Function)'],
+                [/innerHTML\s*=/gi, 'พบการเขียน innerHTML อาจเสี่ยง XSS หากข้อมูลไม่ถูก sanitize'],
+                [/document\.write\s*\(/gi, 'พบ document.write() ซึ่งควรหลีกเลี่ยงในงานเว็บสมัยใหม่'],
+                [/\b(?:exec|shell_exec|system|passthru)\s*\(/gi, 'พบคำสั่งเรียก shell/system'],
+                [/(?:password|passwd|api[_-]?key|secret)\s*[:=]\s*['"][^'"]+['"]/gi, 'อาจมี credential/secret ถูก hard-code'],
+                [/\bSELECT\b[\s\S]{0,120}\+\s*[A-Za-z_$][\w$]*/gi, 'รูปแบบ SQL ที่ต่อ string อาจเสี่ยง SQL injection']
+            ];
+            securityRules.forEach(([rx,msg]) => {
+                let match;
+                while ((match = rx.exec(code))) pushIssue(securityWarnings, msg, match.index, 'security');
+            });
+
+            const syntaxStatus = errors.length
+                ? `❌ พบ ${errors.length} syntax issue(s)`
+                : '✅ ไม่พบ syntax issue จาก static analyzer';
+
+            out.textContent = code;
+            out.classList.remove('empty');
+
+            const issueList = (title, list, cls) => {
+                if (!list.length) return '';
+                return `<div style="margin-top:8px;padding:6px;background:rgba(244,67,54,.08);border-radius:4px;border:1px solid rgba(244,67,54,.35);">
+                    <strong class="${cls}">${htmlEscape(title)}</strong>
+                    <ul style="margin:4px 0 0 15px;">${list.slice(0,30).map(x =>
+                        `<li>${htmlEscape(x.message)}${x.line ? ` <small>(L${x.line}:C${x.column})</small>` : ''}</li>`
+                    ).join('')}</ul>
+                </div>`;
+            };
+
+            let analysisHTML = `<div class="analysis-card">
+                <strong style="color:#29d9ff;">💻 ภาษา: ${htmlEscape(detectedLang)}</strong><br>
+                <span style="color:${errors.length ? '#ff7043' : '#59ff9b'};font-weight:bold;">${syntaxStatus}</span>
+                ${issueList('❌ SYNTAX / STRUCTURE', errors, 'diag-fail')}
+                ${issueList('⚠️ WARNINGS', warnings, '')}
+                ${issueList('🚨 SECURITY INSPECTION', securityWarnings, 'diag-fail')}
+                ${!securityWarnings.length ? '<div style="margin-top:5px;color:#71839a;font-size:11px;">🛡️ ไม่พบรูปแบบคำสั่งสุ่มเสี่ยงจาก static security scan</div>' : ''}
+                <div style="margin-top:7px;color:#71839a;font-size:10px;">STATIC ANALYSIS • ไม่ใช่ compiler/interpreter และไม่รับประกันความถูกต้อง 100%</div>
+            </div>`;
+
+            analysisContainer.innerHTML = analysisHTML;
+            saveHistory('CodeCheck', detectedLang, code.slice(0, 30) + '...', errors.length ? `พบ ${errors.length} syntax issue(s)` : 'ผ่าน static syntax scan');
+            show(errors.length ? `⚠️ พบ ${errors.length} จุดที่ควรตรวจ` : '✅ Static syntax scan ผ่าน');
+        }
+
+        function detectLanguage(code) {
+            if (/<\?php\b|\$[A-Za-z_]\w*/.test(code)) return 'PHP';
+            if (/#include\s*[<"]|std::|using\s+namespace\s+std/.test(code)) return 'C / C++';
+            if (/public\s+class\s+\w+|System\.out\.println|import\s+java\./.test(code)) return 'Java';
+            if (/\b(def|elif)\s+\w+|^\s*from\s+\w+\s+import\s+/m.test(code) || /^\s*print\s*\(/m.test(code)) return 'Python';
+            if (/<\/?[A-Za-z][\w:-]*(?:\s[^<>]*)?>/.test(code)) return 'HTML / XML';
+            if (/\b(interface|type|enum)\s+\w+|:\s*(string|number|boolean)\b|as\s+(string|number)\b/.test(code)) return 'JavaScript / TypeScript';
+            if (/\b(function|const|let|var)\b|console\.log|=>/.test(code)) return 'JavaScript / TypeScript';
+            return 'Unknown';
+        }
+
+    btn.onclick = () => doProcess();
+
+        txt.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                doProcess();
+            }
+        });
+
+        function saveHistory(from, to, text, result) {
+            let history = [];
+            try {
+                const stored = JSON.parse(localStorage.getItem("history") || "[]");
+                history = Array.isArray(stored) ? stored : [];
+            } catch (e) { history = []; }
+            if (history.length > 0 && history[0].text === text && history[0].to === to) return;
+
+            history.unshift({ from, to, text, result, date: new Date().toLocaleTimeString() });
+            localStorage.setItem("history", JSON.stringify(history.slice(0, 30)));
+            if (historyBox.style.display !== 'none') renderHistory();
+        }
+
+        function htmlEscape(value) {
+            return String(value).replace(/[&<>"']/g, ch => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+            }[ch]));
+        }
+
+        function renderHistory() {
+            let history = [];
+            try {
+                const stored = JSON.parse(localStorage.getItem("history") || "[]");
+                history = Array.isArray(stored) ? stored : [];
+            } catch (e) { history = []; }
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="empty">ไม่มีประวัติ</div>';
+                return;
+            }
+            historyList.innerHTML = history.map(item => {
+                const from = htmlEscape(item.from || '');
+                const to = htmlEscape(item.to || '');
+                const date = htmlEscape(item.date || '');
+                const question = htmlEscape(item.text || '');
+                const answer = htmlEscape(item.result || '');
+                return `<div class="history-item">
+                    <div class="meta">${from.toUpperCase()} → ${to.toUpperCase()} (${date})</div>
+                    <div><strong>Q:</strong> ${question}</div>
+                    <div style="color: #59ff9b;"><strong>A:</strong> ${answer}</div>
+                </div>`;
+            }).join('');
+        }
+
+        document.getElementById('toggle-history').onclick = () => {
+            const isHidden = historyBox.style.display === 'none';
+            historyBox.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) renderHistory();
+        };
+
+        document.getElementById('clear-history').onclick = () => {
+            localStorage.removeItem("history");
+            renderHistory();
+            show('✓ ล้างประวัติเรียบร้อย');
+        };
+
+        document.getElementById('run-diagnostics').onclick = () => {
+            const box = document.getElementById('diagnostics-box');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+            if (box.style.display !== 'none') runSelfTest();
+        };
+
+
+        let previewTimer = null;
+        let previewGeneration = 0;
+
+        function previewEscape(value) {
+            return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function detectPreviewType(code) {
+            if (/<(?:!doctype\s+html|html|head|body|div|main|section|h1|p|style|script)\b/i.test(code)) return 'HTML';
+            if (/(^|\s)(body|html|\.|#)[^{]+\{[^}]*[a-z-]+\s*:/i.test(code) && !/\b(function|const|let|var)\b/.test(code)) return 'CSS';
+            if (/\b(function|const|let|var|document\.|window\.|console\.|=>)\b/.test(code)) return 'JavaScript';
+            return 'HTML';
+        }
+
+        function validateBalancedSyntax(code) {
+            const stack = [];
+            const pairs = {')':'(',']':'[','}':'{'};
+            const closeNames = {')':'(',']':'[','}':'{'};
+            let state='code', quote='', escape=false, start=0;
+            const issues=[];
+            for (let i=0;i<code.length;i++) {
+                const ch=code[i], next=code[i+1];
+                if(state==='line'){ if(ch==='\n'||ch==='\r') state='code'; continue; }
+                if(state==='block'){ if(ch==='*'&&next==='/'){state='code';i++;} continue; }
+                if(state==='string'){ if(escape){escape=false;continue;} if(ch==='\\'){escape=true;continue;} if(ch===quote){state='code';quote='';} continue; }
+                if(ch==='/'&&next==='/'){state='line';i++;continue;}
+                if(ch==='/'&&next==='*'){state='block';i++;continue;}
+                if(ch==="'"||ch==='"'){state='string';quote=ch;start=i;continue;}
+                if(ch==='('||ch==='['||ch==='{') stack.push({ch,index:i});
+                else if(ch===')'||ch===']'||ch==='}'){
+                    if(!stack.length) issues.push({message:`พบ ${ch} โดยไม่มี ${closeNames[ch]} ที่เปิดไว้`,index:i});
+                    else {
+                        const top=stack.pop();
+                        if(top.ch!==pairs[ch]) issues.push({message:`ปิด ${ch} ไม่ตรงกับ ${top.ch}`,index:i});
+                    }
+                }
+            }
+            if(state==='string') issues.push({message:`string ${quote} ยังไม่ปิด`,index:start});
+            if(state==='block') issues.push({message:'block comment /* ... */ ยังไม่ปิด',index:code.lastIndexOf('/*')});
+            stack.reverse().forEach(x=>issues.push({message:`${x.ch} เปิดไว้แต่ยังไม่ปิด`,index:x.index}));
+            return issues;
+        }
+
+        function validateHtmlStructure(code) {
+            const issues=[];
+            const stack=[];
+            const voidTags=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+            const re=/<\s*(\/?)\s*([A-Za-z][\w:-]*)(?:\s[^<>]*?)?\s*(\/?)>/g;
+            let m;
+            while((m=re.exec(code))){
+                const closing=!!m[1], name=m[2].toLowerCase(), selfClosing=!!m[3]||voidTags.has(name);
+                if(closing){
+                    if(!stack.length) issues.push({message:`tag </${name}> ไม่มี tag เปิด`,index:m.index});
+                    else{
+                        const top=stack.pop();
+                        if(top.name!==name) issues.push({message:`tag </${name}> ปิดไม่ตรงกับ <${top.name}>`,index:m.index});
+                    }
+                } else if(!selfClosing && !/^(!doctype|br|hr|img|input|meta|link)$/i.test(name)) {
+                    stack.push({name,index:m.index});
+                }
+            }
+            stack.reverse().forEach(x=>issues.push({message:`tag <${x.name}> เปิดไว้แต่ยังไม่ปิด`,index:x.index}));
+            return issues;
+        }
+
+        function positionFor(code,index){
+            const safe=Math.max(0,index||0);
+            const before=code.slice(0,safe);
+            return {line:before.split(/\r?\n/).length,column:safe-(Math.max(before.lastIndexOf('\n'),before.lastIndexOf('\r')))};
+        }
+
+        function validatePreviewCode(code,type){
+            const issues=[];
+            validateBalancedSyntax(code).forEach(x=>issues.push({...x,kind:'SYNTAX'}));
+            if(type==='HTML') validateHtmlStructure(code).forEach(x=>issues.push({...x,kind:'HTML'}));
+            if(type==='JavaScript'){
+                try { new Function(code); }
+                catch(e){
+                    const match=String(e.message||e).match(/line\s+(\d+)|\((\d+):(\d+)\)/i);
+                    issues.push({kind:'JAVASCRIPT',message:`JavaScript syntax error: ${e.message||e}`,index:0});
+                }
+            }
+            if(type==='CSS'){
+                try {
+                    if(window.CSSStyleSheet){
+                        const sheet=new CSSStyleSheet();
+                        sheet.replaceSync(code);
+                    }
+                } catch(e) {
+                    issues.push({kind:'CSS',message:`CSS syntax error: ${e.message||e}`,index:0});
+                }
+            }
+            return issues;
+        }
+
+        function buildPreviewDocument(code,type){
+            if(type==='HTML'){
+                return /<html[\s>]/i.test(code) ? code : `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,sans-serif;padding:24px;}</style></head><body>${code}</body></html>`;
+            }
+            if(type==='CSS'){
+                return `<!doctype html><html><head><style>${code}</style></head><body><h2>CSS Live Preview</h2><p>MW//TRANSLATE CSS sandbox</p><button>Sample Button</button></body></html>`;
+            }
+            return `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,sans-serif;padding:24px}code{font-family:monospace}</style></head><body><h2>JavaScript Live Preview</h2><div id="app">Waiting for script...</div>${'<scr' + 'ipt>'}window.onerror=function(m,s,l,c,e){parent.postMessage({mwPreviewError:String(m)+' (line '+l+')'},'*')};try{${code.replace(/<\/script/gi,'<\\/script')}}catch(e){parent.postMessage({mwPreviewError:String(e.message||e)},'*')}<\\/script></body></html>`;
+        }
+
+        function renderPreviewIssues(code,issues){
+            const alert=document.getElementById('preview-alert');
+            const blocked=document.getElementById('preview-blocked');
+            const blockedMsg=document.getElementById('preview-blocked-message');
+            const status=document.getElementById('preview-status');
+            if(!issues.length){
+                alert.style.display='none';
+                blocked.style.display='none';
+                status.textContent='LIVE / VALID';
+                status.className='preview-ok';
+                return;
+            }
+            const items=issues.slice(0,20).map((x,i)=>{
+                const p=positionFor(code,x.index);
+                return `<div class="preview-issue"><strong>#${i+1} ${previewEscape(x.kind)}</strong> — ${previewEscape(x.message)} <small>(L${p.line}:C${p.column})</small></div>`;
+            }).join('');
+            alert.innerHTML=`<strong>⛔ Preview ถูกระงับ</strong><div style="margin-top:5px;">${items}</div>`;
+            alert.style.display='block';
+            blockedMsg.innerHTML=`พบ ${issues.length} จุดที่ต้องแก้ก่อนแสดงหน้าเว็บ`;
+            blocked.style.display='block';
+            status.textContent=`BLOCKED / ${issues.length} ISSUE(S)`;
+            status.className='preview-bad';
+        }
+
+        function updateLivePreview(){
+            const box=document.getElementById('live-preview-box');
+            if(box.style.display==='none') return;
+            const code=txt.value;
+            const type=detectPreviewType(code);
+            const frame=document.getElementById('live-preview-frame');
+            const issues=validatePreviewCode(code,type);
+            renderPreviewIssues(code,issues);
+            if(issues.length) { frame.srcdoc='<!doctype html><body style="background:#0b1018;color:#e7f1ff;font-family:monospace;padding:20px"><h3>Preview blocked</h3><p>Fix the diagnostics shown above.</p></body>'; return; }
+            previewGeneration++;
+            const generation=previewGeneration;
+            frame.srcdoc=buildPreviewDocument(code,type);
+            frame.dataset.generation=String(generation);
+        }
+
+        document.getElementById('toggle-preview').onclick=()=>{
+            const box=document.getElementById('live-preview-box');
+            box.style.display=box.style.display==='none'?'block':'none';
+            if(box.style.display!=='none') updateLivePreview();
+        };
+        txt.addEventListener('input',()=>{
+            clearTimeout(previewTimer);
+            previewTimer=setTimeout(updateLivePreview,250);
+        });
+        window.addEventListener('message',(event)=>{
+            if(event.source!==document.getElementById('live-preview-frame').contentWindow) return;
+            if(event.data?.mwPreviewError){
+                const code=txt.value;
+                const issues=[{kind:'RUNTIME',message:event.data.mwPreviewError,index:0}];
+                renderPreviewIssues(code,issues);
+                document.getElementById('live-preview-frame').srcdoc='<body style="background:#0b1018;color:#e7f1ff;font-family:monospace;padding:20px"><h3>Preview blocked by runtime error</h3></body>';
+            }
+        });
+
+        // Runtime diagnostics: quick environment checks before packaging.
+        function getSelfTestResults() {
+            return {
+                'DOM Core': !!document.getElementById('txt'),
+                'Local Storage': (() => { try { localStorage.setItem('_mw_test','1'); localStorage.removeItem('_mw_test'); return true; } catch(e) { return false; } })(),
+                'Speech Engine': 'speechSynthesis' in window,
+                'Clipboard API': !!navigator.clipboard,
+                'Fetch API': 'fetch' in window,
+                'Word Segmentation': !!window.Intl?.Segmenter,
+                'Online State': navigator.onLine,
+                'Service Worker API': 'serviceWorker' in navigator
+            };
+        }
+
+        function runSelfTest(showMessage = true) {
+            const checks = getSelfTestResults();
+            const list = document.getElementById('diagnostics-list');
+            const box = document.getElementById('diagnostics-box');
+            const summary = document.getElementById('diag-summary');
+            const rows = Object.entries(checks).map(([name, ok]) =>
+                `<div class="diag-row"><span>${htmlEscape(name)}</span><strong class="${ok ? 'diag-pass' : 'diag-fail'}">${ok ? 'PASS' : 'CHECK'}</strong></div>`
+            ).join('');
+            list.innerHTML = rows;
+            const passed = Object.values(checks).filter(Boolean).length;
+            summary.textContent = `${passed}/${Object.keys(checks).length} READY`;
+            if (showMessage) show(`SYSTEM TEST ${passed}/${Object.keys(checks).length} READY`);
+            console.info('[MW//DIAGNOSTICS]', checks);
+            return checks;
+        }
+
+        function updateNetworkStatus() {
+            const el = document.getElementById('net-status');
+            el.textContent = navigator.onLine ? 'NET: ONLINE' : 'NET: OFFLINE';
+            el.style.color = navigator.onLine ? '#59ff9b' : '#ff7043';
+        }
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        updateNetworkStatus();
+        window.addEventListener('load', () => runSelfTest(false));
+
+        // Service Worker for Offline Mode
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js').catch(() => console.info('[MW//OFFLINE] service worker unavailable'));
+            });
+        }
+    </script>
+</body>
+</html>
